@@ -218,9 +218,10 @@ HTML_TEMPLATE = """
 
 async def call_workers_ai(prompt, account_id, api_token):
     """Call Cloudflare Workers AI to convert natural language to JSON structure"""
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
-    
-    system_prompt = """You are a weather query parser. Convert natural language weather queries into JSON.
+    try:
+        url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
+        
+        system_prompt = """You are a weather query parser. Convert natural language weather queries into JSON.
 Output format: {"intent": "get_weather", "q": "location", "units": "metric"|"imperial", "timeframe": "now"|"today"|"tomorrow"|"7d"}
 
 Rules:
@@ -232,38 +233,58 @@ Rules:
 Examples:
 Input: "What's the weather in Paris?"
 Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": "now"}"""
-    
-    payload = {
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ]
-    }
-    
-    headers = Headers.new()
-    headers.set("Authorization", f"Bearer {api_token}")
-    headers.set("Content-Type", "application/json")
-    
-    response = await fetch(url, method="POST", headers=headers, body=json.dumps(payload))
-    result = await response.json()
-    
-    if result.get("success") and result.get("result"):
-        return result["result"]["response"]
-    return None
+        
+        payload = {
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        print(f"[Workers AI] Parsing query: {prompt}")
+        
+        headers = Headers.new()
+        headers.set("Authorization", f"Bearer {api_token[:8]}...{api_token[-4:]}")
+        headers.set("Content-Type", "application/json")
+        
+        response = await fetch(url, method="POST", headers=headers, body=json.dumps(payload))
+        
+        print(f"[Workers AI] Response status: {response.status}")
+        
+        if not response.ok:
+            error_text = await response.text()
+            print(f"[Workers AI] Error response: {error_text}")
+            raise Exception(f"Workers AI API error (HTTP {response.status}): {error_text[:100]}")
+        
+        result = await response.json()
+        
+        if result.get("success") and result.get("result"):
+            ai_response = result["result"]["response"]
+            print(f"[Workers AI] Successfully parsed query")
+            return ai_response
+        else:
+            error_msg = result.get("errors", ["Unknown AI error"])[0] if result.get("errors") else "AI returned no result"
+            print(f"[Workers AI] Error: {error_msg}")
+            raise Exception(f"Workers AI failed: {error_msg}")
+            
+    except Exception as e:
+        print(f"[Workers AI] Exception: {str(e)}")
+        raise Exception(f"AI query parsing failed: {str(e)}")
 
 
 async def get_weather(query_params, api_key):
     """Call WeatherAPI.com to get weather data"""
-    base_url = "http://api.weatherapi.com/v1/"
-    
-    location = query_params.get("q", "")
-    units = query_params.get("units", "metric")
-    timeframe = query_params.get("timeframe", "now")
-    
-    if not location:
-        return {"error": "No location specified"}
-    
     try:
+        base_url = "http://api.weatherapi.com/v1/"
+        
+        location = query_params.get("q", "")
+        units = query_params.get("units", "metric")
+        timeframe = query_params.get("timeframe", "now")
+        
+        if not location:
+            raise Exception("No location specified in query")
+        
+        print(f"[Weather] Fetching weather for: {location} (units: {units}, timeframe: {timeframe})")
         # Determine endpoint and parameters based on timeframe
         if timeframe in ["now", "today"]:
             # Current weather
@@ -284,11 +305,12 @@ async def get_weather(query_params, api_key):
         print(f"[WeatherAPI Response] Status: {response.status} {response.statusText if hasattr(response, 'statusText') else ''}")
         
         if not response.ok:
+            error_text = await response.text()
             if response.status == 400:
                 print(f"[WeatherAPI Response] Error: Location '{location}' not found")
-                return {"error": f"Location '{location}' not found"}
-            print(f"[WeatherAPI Response] Error: HTTP {response.status}")
-            return {"error": f"Weather API error: HTTP {response.status}"}
+                raise Exception(f"Location '{location}' not found. Please check the spelling or try a different location.")
+            print(f"[WeatherAPI Response] Error: HTTP {response.status} - {error_text[:100]}")
+            raise Exception(f"Weather API error (HTTP {response.status}): Unable to fetch weather data")
         
         data = await response.json()
         
@@ -302,22 +324,30 @@ async def get_weather(query_params, api_key):
         if 'error' in data:
             error_msg = data['error'].get('message', 'Weather API error')
             print(f"[WeatherAPI Response] API Error: {error_msg}")
-            return {"error": error_msg}
+            raise Exception(f"Weather API error: {error_msg}")
+        
+        # Validate response structure
+        if 'location' not in data:
+            raise Exception("Invalid weather data received: missing location information")
+        
+        if 'current' not in data and 'forecast' not in data:
+            raise Exception("Invalid weather data received: missing weather information")
         
         # Determine temperature and wind units
         if units == "imperial":
             temp_unit = "°F"
             wind_unit = "mph"
-            temp_value = data['current']['temp_f']
-            wind_value = data['current']['wind_mph']
+            temp_value = data.get('current', {}).get('temp_f', 'N/A')
+            wind_value = data.get('current', {}).get('wind_mph', 'N/A')
         else:
             temp_unit = "°C"
             wind_unit = "kph"
-            temp_value = data['current']['temp_c']
-            wind_value = data['current']['wind_kph']
+            temp_value = data.get('current', {}).get('temp_c', 'N/A')
+            wind_value = data.get('current', {}).get('wind_kph', 'N/A')
         
         if timeframe in ["now", "today"]:
             # Current weather response
+            print(f"[Weather] Successfully fetched current weather for {data['location']['name']}")
             return {
                 "location": f"{data['location']['name']}, {data['location']['country']}",
                 "temperature": f"{temp_value}{temp_unit}",
@@ -327,36 +357,52 @@ async def get_weather(query_params, api_key):
             }
         else:
             # Forecast response
+            if 'forecast' not in data or 'forecastday' not in data['forecast']:
+                raise Exception("Forecast data not available for this location")
+            
             forecast_list = []
             for day in data['forecast']['forecastday']:
-                if units == "imperial":
-                    high = f"{day['day']['maxtemp_f']}°F"
-                    low = f"{day['day']['mintemp_f']}°F"
-                else:
-                    high = f"{day['day']['maxtemp_c']}°C"
-                    low = f"{day['day']['mintemp_c']}°C"
-                
-                forecast_list.append({
-                    "date": day['date'],
-                    "condition": day['day']['condition']['text'],
-                    "high": high,
-                    "low": low
-                })
+                try:
+                    if units == "imperial":
+                        high = f"{day['day']['maxtemp_f']}°F"
+                        low = f"{day['day']['mintemp_f']}°F"
+                    else:
+                        high = f"{day['day']['maxtemp_c']}°C"
+                        low = f"{day['day']['mintemp_c']}°C"
+                    
+                    forecast_list.append({
+                        "date": day['date'],
+                        "condition": day['day']['condition']['text'],
+                        "high": high,
+                        "low": low
+                    })
+                except KeyError as ke:
+                    print(f"[Weather] Warning: Missing data in forecast day: {ke}")
+                    continue
             
+            if not forecast_list:
+                raise Exception("No valid forecast data available")
+            
+            print(f"[Weather] Successfully fetched {len(forecast_list)}-day forecast for {data['location']['name']}")
             return {
                 "location": f"{data['location']['name']}, {data['location']['country']}",
                 "forecast": forecast_list
             }
+            
     except Exception as e:
-        print(f"[WeatherAPI Error] Exception occurred: {str(e)}")
-        return {"error": f"Failed to fetch weather: {str(e)}"}
+        print(f"[Weather] Exception occurred: {str(e)}")
+        # Re-raise the exception to be handled by the caller
+        raise Exception(f"Weather fetch failed: {str(e)}")
 
 
 async def generate_limerick(location, weather_condition, temperature, account_id, api_token):
     """Generate a limerick about the city and its weather"""
-    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
-    
-    prompt = f"""Write a fun, creative limerick (5-line poem with AABBA rhyme scheme) about {location} and its current weather.
+    try:
+        print(f"[Limerick] Generating limerick for {location}")
+        
+        url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
+        
+        prompt = f"""Write a fun, creative limerick (5-line poem with AABBA rhyme scheme) about {location} and its current weather.
 
 Weather details:
 - Location: {location}
@@ -364,27 +410,37 @@ Weather details:
 - Temperature: {temperature}
 
 Output ONLY the limerick, no other text."""
-    
-    payload = {
-        "messages": [
-            {"role": "system", "content": "You are a creative poet who writes fun limericks. Output only the limerick poem, nothing else."},
-            {"role": "user", "content": prompt}
-        ]
-    }
-    
-    headers = Headers.new()
-    headers.set("Authorization", f"Bearer {api_token}")
-    headers.set("Content-Type", "application/json")
-    
-    try:
+        
+        payload = {
+            "messages": [
+                {"role": "system", "content": "You are a creative poet who writes fun limericks. Output only the limerick poem, nothing else."},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        headers = Headers.new()
+        headers.set("Authorization", f"Bearer {api_token}")
+        headers.set("Content-Type", "application/json")
+        
         response = await fetch(url, method="POST", headers=headers, body=json.dumps(payload))
+        
+        if not response.ok:
+            print(f"[Limerick] Warning: Failed to generate limerick (HTTP {response.status})")
+            return None
+        
         result = await response.json()
         
         if result.get("success") and result.get("result"):
             limerick = result["result"]["response"].strip().strip('"').strip("'")
+            print(f"[Limerick] Successfully generated limerick")
             return limerick
-        return None
-    except:
+        else:
+            print(f"[Limerick] Warning: No limerick in response")
+            return None
+            
+    except Exception as e:
+        print(f"[Limerick] Non-critical error: {str(e)}")
+        # Limerick generation is optional, so don't raise exception
         return None
 
 
@@ -406,60 +462,150 @@ async def on_fetch(request, env):
     # POST /chat - handle weather query
     elif method == "POST" and path == '/chat':
         try:
-            body = await request.text()
-            data = json.loads(body)
+            print(f"[Main] Received POST request to /chat")
+            
+            # Parse request body
+            try:
+                body = await request.text()
+                data = json.loads(body)
+            except Exception as e:
+                print(f"[Main] Error parsing request body: {str(e)}")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": "Invalid request format. Please try again."}), 
+                    status=400, 
+                    headers=headers
+                )
+            
             user_query = data.get('query', '').strip()
             
             if not user_query:
-                return Response.new(json.dumps({"error": "No query provided"}), status=400)
+                print(f"[Main] Error: Empty query")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": "Please enter a weather query (e.g., 'What's the weather in London?')"}), 
+                    status=400,
+                    headers=headers
+                )
+            
+            print(f"[Main] Processing query: {user_query}")
             
             # Get environment variables
-            cf_account_id = env.CF_ACCOUNT_ID
-            cf_api_token = env.CF_API_TOKEN
-            weather_api_key = env.WEATHER_API_KEY
-            
-            if not all([cf_account_id, cf_api_token, weather_api_key]):
-                return Response.new(json.dumps({"error": "Missing required environment variables"}), status=500)
+            try:
+                cf_account_id = env.CF_ACCOUNT_ID
+                cf_api_token = env.CF_API_TOKEN
+                weather_api_key = env.WEATHER_API_KEY
+                
+                if not all([cf_account_id, cf_api_token, weather_api_key]):
+                    raise Exception("Missing API credentials")
+            except Exception as e:
+                print(f"[Main] Configuration error: {str(e)}")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": "Server configuration error. Please contact the administrator."}), 
+                    status=500,
+                    headers=headers
+                )
             
             # Call Workers AI to parse the query
-            ai_response = await call_workers_ai(user_query, cf_account_id, cf_api_token)
-            
-            if not ai_response:
-                return Response.new(json.dumps({"error": "Did not work! AI service unavailable."}), status=500)
+            try:
+                ai_response = await call_workers_ai(user_query, cf_account_id, cf_api_token)
+                
+                if not ai_response:
+                    raise Exception("AI returned empty response")
+                    
+            except Exception as e:
+                print(f"[Main] AI parsing error: {str(e)}")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": f"Failed to understand your query: {str(e)}. Please try rephrasing (e.g., 'weather in Paris')."}), 
+                    status=500,
+                    headers=headers
+                )
             
             # Parse AI response as JSON
-            json_start = ai_response.find('{')
-            json_end = ai_response.rfind('}') + 1
-            
-            if json_start == -1 or json_end == 0:
-                return Response.new(json.dumps({"error": "Did not work! Invalid AI response format."}), status=500)
-            
-            json_str = ai_response[json_start:json_end]
-            query_params = json.loads(json_str)
-            
-            if query_params.get("intent") != "get_weather" or "q" not in query_params:
-                return Response.new(json.dumps({"error": "Did not work! Invalid query structure."}), status=500)
+            try:
+                json_start = ai_response.find('{')
+                json_end = ai_response.rfind('}') + 1
+                
+                if json_start == -1 or json_end == 0:
+                    raise Exception("AI response doesn't contain valid JSON")
+                
+                json_str = ai_response[json_start:json_end]
+                query_params = json.loads(json_str)
+                
+                if query_params.get("intent") != "get_weather" or "q" not in query_params:
+                    raise Exception("AI couldn't identify a location in your query")
+                    
+                print(f"[Main] Parsed query: {query_params}")
+                
+            except json.JSONDecodeError as e:
+                print(f"[Main] JSON parsing error: {str(e)}")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": "Failed to process your query. Please try asking in a simpler way (e.g., 'weather in London')."}), 
+                    status=500,
+                    headers=headers
+                )
+            except Exception as e:
+                print(f"[Main] Query validation error: {str(e)}")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": f"Couldn't understand your query: {str(e)}. Try: 'What's the weather in [city]?'"}), 
+                    status=400,
+                    headers=headers
+                )
             
             # Get weather data
-            weather_data = await get_weather(query_params, weather_api_key)
+            try:
+                weather_data = await get_weather(query_params, weather_api_key)
+                print(f"[Main] Successfully fetched weather data")
+                
+            except Exception as e:
+                print(f"[Main] Weather fetch error: {str(e)}")
+                headers = Headers.new()
+                headers.set("Content-Type", "application/json")
+                return Response.new(
+                    json.dumps({"error": str(e)}), 
+                    status=400,
+                    headers=headers
+                )
             
-            if "error" in weather_data:
-                return Response.new(json.dumps(weather_data), status=400)
+            # Generate limerick (non-critical, errors are swallowed)
+            try:
+                location = weather_data.get('location', query_params.get('q', 'Unknown'))
+                condition = weather_data.get('condition', 'unknown weather')
+                temperature = weather_data.get('temperature', 'unknown temperature')
+                
+                limerick = await generate_limerick(location, condition, temperature, cf_account_id, cf_api_token)
+                weather_data['limerick'] = limerick
+                
+            except Exception as e:
+                print(f"[Main] Limerick generation error (non-critical): {str(e)}")
+                weather_data['limerick'] = None
             
-            # Generate limerick
-            location = weather_data.get('location', query_params.get('q', 'Unknown'))
-            condition = weather_data.get('condition', 'unknown weather')
-            temperature = weather_data.get('temperature', 'unknown temperature')
-            
-            limerick = await generate_limerick(location, condition, temperature, cf_account_id, cf_api_token)
-            weather_data['limerick'] = limerick
-            
+            # Return successful response
+            print(f"[Main] Returning successful response")
             headers = Headers.new()
             headers.set("Content-Type", "application/json")
             return Response.new(json.dumps(weather_data), status=200, headers=headers)
             
         except Exception as e:
-            return Response.new(json.dumps({"error": f"Did not work! Error: {str(e)}"}), status=500)
+            # Catch-all for any unexpected errors
+            print(f"[Main] Unexpected error: {str(e)}")
+            headers = Headers.new()
+            headers.set("Content-Type", "application/json")
+            return Response.new(
+                json.dumps({"error": f"An unexpected error occurred: {str(e)}. Please try again."}), 
+                status=500,
+                headers=headers
+            )
     
     # 404 for other routes
     return Response.new("Not Found", status=404)
