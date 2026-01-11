@@ -269,22 +269,22 @@ wrangler pages deploy .
 ## 🌟 Features
 
 - 🗣️ Natural language processing
-- 🤖 AI-powered query parsing
+- 🤖 AI-powered query parsing (Cloudflare Workers AI)
 - 📜 Creative AI-generated limericks
-- 🌍 Global weather coverage
+- 🌍 Global weather coverage (WeatherAPI.com)
 - 📱 Responsive design
-- ⚡ Fast (Cloudflare network)
-- 🔒 Secure (API keys in env vars)
+- ⚡ Fast (Cloudflare Workers edge network)
+- 🔒 Secure (encrypted secrets)
 - 🎨 Modern, beautiful UI
 - 📊 Current weather + forecasts
 - 🌡️ Metric & imperial units
 
 ## 📚 Resources
 
-- [Flask Documentation](https://flask.palletsprojects.com/)
+- [Cloudflare Workers](https://workers.cloudflare.com/)
 - [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/)
-- [OpenWeatherMap API](https://openweathermap.org/api)
-- [Cloudflare Pages](https://developers.cloudflare.com/pages/)
+- [WeatherAPI.com](https://www.weatherapi.com/)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
 
 ## ✨ Summary
 

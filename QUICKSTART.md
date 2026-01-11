@@ -14,54 +14,51 @@ A natural language weather chatbot that:
 ## ⚡ 5-Minute Local Setup
 
 1. **Get API Keys** (2 minutes)
-   - OpenWeatherMap: https://openweathermap.org/api (Free account)
+   - WeatherAPI.com: https://www.weatherapi.com/signup.aspx (Free account - 1M calls/month)
    - Cloudflare Account ID: From your Cloudflare Dashboard
    - Cloudflare API Token: Profile → API Tokens → Create Token
 
-2. **Install Dependencies** (1 minute)
+2. **Install Wrangler CLI** (1 minute)
    ```bash
-   pip install -r requirements.txt
+   npm install -g wrangler
    ```
 
-3. **Set Environment Variables** (1 minute)
-   
-   **Windows (PowerShell):**
-   ```powershell
-   $env:CF_ACCOUNT_ID="your-account-id"
-   $env:CF_API_TOKEN="your-api-token"
-   $env:WEATHER_API_KEY="your-weather-key"
-   ```
-   
-   **Linux/Mac:**
+3. **Login to Cloudflare** (30 seconds)
    ```bash
-   export CF_ACCOUNT_ID="your-account-id"
-   export CF_API_TOKEN="your-api-token"
-   export WEATHER_API_KEY="your-weather-key"
+   wrangler login
    ```
 
-4. **Run** (30 seconds)
+4. **Set Secrets** (1 minute)
    ```bash
-   python app.py
+   wrangler secret put CF_ACCOUNT_ID
+   wrangler secret put CF_API_TOKEN
+   wrangler secret put WEATHER_API_KEY
    ```
-   
-   Or use the helper scripts:
-   - Windows: Double-click `start.bat`
-   - Linux/Mac: `chmod +x start.sh && ./start.sh`
 
-5. **Visit** http://localhost:8787 and try it! 🎉
+5. **Deploy** (30 seconds)
+   ```bash
+   wrangler deploy
+   ```
+
+6. **Visit** your worker URL and try it! 🎉
 
 ## 🧪 Test Your Setup
 
-Before running the app:
+Check that all secrets are set:
 ```bash
-python test_local.py
+wrangler secret list
 ```
 
-This verifies all environment variables are set correctly.
+You should see:
+- CF_ACCOUNT_ID
+- CF_API_TOKEN
+- WEATHER_API_KEY
 
-## 🌍 Deploy to Cloudflare (10 minutes)
+## 🌍 Deploy to Cloudflare Workers
 
-### Quick Deploy
+Deployment is covered in the 5-minute setup above, but here's more detail:
+
+### Detailed Steps
 
 1. **Install Wrangler:**
    ```bash
@@ -73,22 +70,19 @@ This verifies all environment variables are set correctly.
    wrangler login
    ```
 
-3. **Deploy:**
+3. **Set Secrets:**
    ```bash
-   # For Pages
-   wrangler pages project create weather-chat-app
-   wrangler pages deploy . --project-name=weather-chat-app
-   
-   # Or connect via Git (recommended)
-   # See cloudflare instructions.md for Git-based deployment
+   wrangler secret put CF_ACCOUNT_ID
+   wrangler secret put CF_API_TOKEN
+   wrangler secret put WEATHER_API_KEY
    ```
 
-4. **Set Environment Variables:**
-   - Go to Cloudflare Dashboard
-   - Workers & Pages → Your Project → Settings
-   - Add: `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `WEATHER_API_KEY`
+4. **Deploy:**
+   ```bash
+   wrangler deploy
+   ```
 
-5. **Done!** Your app is live at `https://weather-chat-app.pages.dev`
+5. **Done!** Your app is live at `https://weather-chat-app.<your-subdomain>.workers.dev`
 
 ## 📚 Documentation
 

@@ -21,20 +21,20 @@ Your application consists of:
 ## Prerequisites
 
 1. A Cloudflare account (free tier works fine)
-2. Python 3.8+ installed locally
-3. Node.js and npm installed (for Wrangler CLI)
-4. An OpenWeatherMap API key (or another weather API)
+2. Node.js and npm installed (for Wrangler CLI)
+3. A WeatherAPI.com API key (free tier available)
 
 ---
 
 ## Step 1: Get Your API Keys
 
-### 1.1 OpenWeatherMap API Key
+### 1.1 WeatherAPI.com API Key
 
-1. Go to [OpenWeatherMap](https://openweathermap.org/api)
+1. Go to [WeatherAPI.com](https://www.weatherapi.com/signup.aspx)
 2. Sign up for a free account
-3. Navigate to your API keys section
-4. Copy your API key (you'll need this as `WEATHER_API_KEY`)
+3. After signup, you'll be taken to your dashboard
+4. Copy your API key from the dashboard (you'll need this as `WEATHER_API_KEY`)
+5. Free tier includes: 1 million calls/month
 
 ### 1.2 Cloudflare Account ID and API Token
 
@@ -74,21 +74,7 @@ We'll focus on **Option A** as it's more straightforward for Flask applications.
    cd weatherapppy
    ```
 
-2. **Test locally (optional but recommended):**
-   ```bash
-   # Install dependencies
-   pip install -r requirements.txt
-   
-   # Set environment variables (Windows PowerShell)
-   $env:CF_ACCOUNT_ID="your-account-id"
-   $env:CF_API_TOKEN="your-api-token"
-   $env:WEATHER_API_KEY="your-weather-api-key"
-   
-   # Run the app
-   python app.py
-   ```
-   
-   Visit `http://localhost:8787` to test locally.
+2. **Note:** This is a Cloudflare Workers Python application. It runs directly on Cloudflare's edge network and doesn't require local Python testing with Flask. You can deploy directly to Cloudflare Workers.
 
 ---
 
@@ -168,53 +154,60 @@ wrangler pages deploy . --project-name=weather-chat-app
 
 ---
 
-## Step 5: Alternative - Deploy as Cloudflare Worker
+## Step 5: Verify Deployment
 
-If you prefer to use Workers instead of Pages:
+After deployment, test your worker:
 
-### 5.1 Update wrangler.toml
+1. Visit your worker URL (provided after deployment)
+2. Try these queries:
+   - "What's the weather in London?"
+   - "Weather in Tokyo tomorrow"
+   - "7 day forecast for Paris"
 
-The `wrangler.toml` file is already configured in your project. Review it and update the name if needed.
-
-### 5.2 Deploy with Wrangler
-
-```bash
-# Set your secrets
-wrangler secret put CF_ACCOUNT_ID
-wrangler secret put CF_API_TOKEN
-wrangler secret put WEATHER_API_KEY
-
-# Deploy the worker
-wrangler deploy
-```
-
-**Note:** Python support in Workers may require additional configuration. Check [Cloudflare's Python Workers documentation](https://developers.cloudflare.com/workers/languages/python/) for the latest updates.
+3. Check the logs:
+   ```bash
+   wrangler tail
+   ```
 
 ---
 
-## Step 6: Configure Environment Variables (Pages)
+## Step 6: Update Environment Variables
+
+If you need to update your secrets later:
+
+```bash
+# Update any secret
+wrangler secret put WEATHER_API_KEY
+
+# List all secrets (won't show values)
+wrangler secret list
+
+# Delete a secret
+wrangler secret delete SECRET_NAME
+```
+
+---
+
+## Step 7: Advanced Configuration
+
+### Custom Domain
+
+Add a custom domain to your worker:
 
 1. Go to your Cloudflare Dashboard
 2. Navigate to "Workers & Pages"
-3. Select your deployed application
-4. Go to "Settings" → "Environment variables"
-5. Add the following variables for **Production**:
-   - `CF_ACCOUNT_ID`: Your Cloudflare account ID
-   - `CF_API_TOKEN`: Your Cloudflare API token
-   - `WEATHER_API_KEY`: Your OpenWeatherMap API key
-6. Click "Save"
-7. Trigger a new deployment or restart your application
+3. Select your worker
+4. Go to "Triggers" → "Custom Domains"
+5. Click "Add Custom Domain"
+6. Enter your domain and follow the instructions
 
----
+### Routes
 
-## Step 7: Test Your Deployment
+You can also add routes to serve the worker on your existing domain:
 
-1. Once deployed, Cloudflare will provide you with a URL (e.g., `https://weather-chat-app.pages.dev`)
-2. Visit the URL in your browser
-3. Try asking questions like:
-   - "What's the weather in Riga?"
-   - "How's the weather in New York tomorrow?"
-   - "7 day forecast for London in Fahrenheit"
+```bash
+wrangler route add "example.com/weather/*" --name weather-chat-app
+```
 
 ---
 
@@ -243,9 +236,10 @@ wrangler deploy
 
 ### Issue: Weather API errors
 
-- Verify your OpenWeatherMap API key is valid
-- Check if you've exceeded the free tier limits (60 calls/minute)
-- Ensure the API key is set in environment variables
+- Verify your WeatherAPI.com API key is valid
+- Check if you've exceeded the free tier limits (1M calls/month)
+- Ensure the API key is set as a secret via `wrangler secret put`
+- Check the API status at weatherapi.com/api-status.aspx
 
 ### Issue: Python not supported
 
@@ -275,15 +269,22 @@ Check [Cloudflare AI documentation](https://developers.cloudflare.com/workers-ai
 ### 3. Cost Considerations
 
 - **Workers AI:** Free tier includes 10,000 neurons per day
-- **OpenWeatherMap:** Free tier includes 60 calls/minute, 1,000,000 calls/month
-- **Cloudflare Pages:** Free tier includes unlimited requests
+- **WeatherAPI.com:** Free tier includes 1,000,000 calls/month
+- **Cloudflare Workers:** Free tier includes 100,000 requests/day
 
 ### 4. Alternative Weather APIs
 
-If you prefer to use Weather.com (The Weather Channel API):
-1. Sign up at [Weather.com API](https://www.weather.com/api)
+If you prefer to use a different provider:
+1. Sign up for their API (e.g., OpenWeatherMap, Tomorrow.io)
 2. Update the `get_weather()` function in `app.py` with their API endpoints
-3. Update the `WEATHER_API_KEY` environment variable
+3. Modify the response parsing logic as needed
+4. Update the `WEATHER_API_KEY` secret via `wrangler secret put`
+
+**Why WeatherAPI.com?**
+- Simple, clean API design
+- Generous free tier (1M calls/month)
+- Fast response times
+- Reliable uptime
 
 ---
 

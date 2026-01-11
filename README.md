@@ -21,11 +21,11 @@ A natural language weather assistant built with Python Flask and deployed on Clo
 
 ## Technology Stack
 
-- **Backend**: Python Flask
+- **Backend**: Python (Cloudflare Workers)
 - **AI**: Cloudflare Workers AI (Llama 3)
-- **Weather Data**: OpenWeatherMap API
-- **Deployment**: Cloudflare Pages/Workers
-- **Frontend**: Vanilla JavaScript with modern CSS
+- **Weather Data**: WeatherAPI.com
+- **Deployment**: Cloudflare Workers
+- **Frontend**: HTML/CSS/JavaScript (embedded)
 
 ## Project Structure
 
@@ -81,7 +81,7 @@ You need to set these environment variables:
 |----------|-------------|------------|
 | `CF_ACCOUNT_ID` | Your Cloudflare account ID | Found in Cloudflare Dashboard |
 | `CF_API_TOKEN` | Cloudflare API token | Create in Profile → API Tokens |
-| `WEATHER_API_KEY` | OpenWeatherMap API key | Sign up at openweathermap.org |
+| `WEATHER_API_KEY` | WeatherAPI.com API key | Sign up at weatherapi.com |
 
 ## How It Works
 
@@ -96,7 +96,7 @@ You need to set these environment variables:
      "timeframe": "now|today|tomorrow|7d"
    }
    ```
-4. **Weather API**: Fetches weather data from OpenWeatherMap
+4. **Weather API**: Fetches weather data from WeatherAPI.com
 5. **Limerick Generation**: AI creates a fun poem about the city and weather
 6. **Display**: Shows formatted weather information and limerick to the user
 
@@ -165,12 +165,14 @@ Edit `templates/chat.html` to customize:
 
 ### Using a Different Weather API
 
-To use Weather.com or another provider:
+To use a different weather provider:
 
 1. Sign up for their API
 2. Update the `get_weather()` function in `app.py`
 3. Modify the response parsing logic as needed
 4. Update the `WEATHER_API_KEY` environment variable
+
+**Current Provider:** WeatherAPI.com (free tier: 1M calls/month)
 
 ### Using a Different AI Model
 
@@ -195,9 +197,9 @@ This project is open source and available for personal and commercial use.
 
 ## Credits
 
-- Built with [Flask](https://flask.palletsprojects.com/)
+- Built for [Cloudflare Workers](https://workers.cloudflare.com/)
 - Powered by [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/)
-- Weather data from [OpenWeatherMap](https://openweathermap.org/)
+- Weather data from [WeatherAPI.com](https://www.weatherapi.com/)
 
 ## Support
 
