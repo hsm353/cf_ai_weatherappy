@@ -273,18 +273,36 @@ async def get_weather(query_params, api_key):
             days = 7 if timeframe == "7d" else 3
             url = f"{base_url}forecast.json?key={api_key}&q={location}&days={days}"
         
+        # Log the request (without exposing full API key)
+        masked_url = url.replace(api_key, f"{api_key[:8]}...{api_key[-4:]}")
+        print(f"[WeatherAPI Request] URL: {masked_url}")
+        print(f"[WeatherAPI Request] Location: {location}, Units: {units}, Timeframe: {timeframe}")
+        
         response = await fetch(url)
+        
+        # Log the response status
+        print(f"[WeatherAPI Response] Status: {response.status} {response.statusText if hasattr(response, 'statusText') else ''}")
         
         if not response.ok:
             if response.status == 400:
+                print(f"[WeatherAPI Response] Error: Location '{location}' not found")
                 return {"error": f"Location '{location}' not found"}
+            print(f"[WeatherAPI Response] Error: HTTP {response.status}")
             return {"error": f"Weather API error: HTTP {response.status}"}
         
         data = await response.json()
         
+        # Log the response data (truncated for readability)
+        print(f"[WeatherAPI Response] Data received for: {data.get('location', {}).get('name', 'Unknown')}")
+        if 'current' in data:
+            print(f"[WeatherAPI Response] Current temp: {data['current'].get('temp_c')}°C / {data['current'].get('temp_f')}°F")
+            print(f"[WeatherAPI Response] Condition: {data['current']['condition'].get('text', 'N/A')}")
+        
         # Check for API error response
         if 'error' in data:
-            return {"error": data['error'].get('message', 'Weather API error')}
+            error_msg = data['error'].get('message', 'Weather API error')
+            print(f"[WeatherAPI Response] API Error: {error_msg}")
+            return {"error": error_msg}
         
         # Determine temperature and wind units
         if units == "imperial":
@@ -330,6 +348,7 @@ async def get_weather(query_params, api_key):
                 "forecast": forecast_list
             }
     except Exception as e:
+        print(f"[WeatherAPI Error] Exception occurred: {str(e)}")
         return {"error": f"Failed to fetch weather: {str(e)}"}
 
 
