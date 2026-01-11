@@ -246,7 +246,9 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
         headers = Headers.new()
         headers.set("Authorization", f"Bearer {api_token}")
         headers.set("Content-Type", "application/json")
-        print(payload)
+        # Log payload (for debugging)
+        print(f"[Workers AI] Request payload messages count: {len(payload.get('messages', []))}")
+        
         response = await fetch(url, method="POST", headers=headers, body=json.dumps(payload))
         
         print(f"[Workers AI] Response status: {response.status}")
@@ -257,7 +259,13 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
             raise Exception(f"Workers AI API error (HTTP {response.status}): {error_text[:100]}")
         
         result = await response.json()
-        print(json.dumps(result))
+        # Convert JsProxy to Python dict (if needed)
+
+        python_dict = Object.fromEntries(result)
+        print(json.dumps(python_dict, indent=2))  # ✅ Now it works
+        # Log the response (JsProxy objects can't use json.dumps, just print directly)
+        print(f"[Workers AI] Response success: {result.get('success')}")
+        print(f"[Workers AI] Response result: {result.get('result')}")
         if result.get("success") and result.get("result"):
             ai_response = result["result"]["response"]
             print(f"[Workers AI] Successfully parsed query")
