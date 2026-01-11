@@ -7,3 +7,11 @@ compatibility_flags = ["python_workers"]
 # CF_ACCOUNT_ID = "your-cloudflare-account-id"
 # CF_API_TOKEN = "your-cloudflare-api-token"
 # WEATHER_API_KEY = "your-openweathermap-api-key"
+
+
+[observability]
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
