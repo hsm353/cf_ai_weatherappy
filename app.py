@@ -1,5 +1,7 @@
 from js import Response, fetch, Object, Headers
 import json
+from datetime import datetime
+import hashlib
 
 # HTML template for the chat interface
 HTML_TEMPLATE = """
@@ -157,6 +159,70 @@ HTML_TEMPLATE = """
             margin-top: 15px;
             margin-bottom: 10px;
         }
+        .history-sidebar {
+            position: fixed;
+            top: 50px;
+            right: 20px;
+            width: 280px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 40px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .history-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .history-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            border-left: 3px solid #f6821f;
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            background: #f3f4f6;
+            transform: translateX(-3px);
+        }
+        .history-query {
+            color: #5a6c7d;
+            font-size: 0.85em;
+            margin-bottom: 6px;
+            font-style: italic;
+        }
+        .history-location {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        .history-empty {
+            color: #9ca3af;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        @media (max-width: 1200px) {
+            .container {
+                margin: 50px auto;
+                max-width: 800px;
+            }
+            .history-sidebar {
+                position: relative;
+                top: 0;
+                right: 0;
+                width: calc(100% - 80px);
+                max-width: 800px;
+                margin: 0 auto 30px auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -176,8 +242,42 @@ HTML_TEMPLATE = """
             <button onclick="sendQuery()" id="sendBtn">Send</button>
         </div>
     </div>
+    
+    <div class="history-sidebar">
+        <div class="history-title">📝 Recent Queries</div>
+        <div id="historyList">
+            <div class="history-empty">Loading...</div>
+        </div>
+    </div>
 
     <script>
+         // Load chat history on page load
+         async function loadHistory() {
+             try {
+                 const response = await fetch('/api/history');
+                 const history = await response.json();
+                 
+                 const historyList = document.getElementById('historyList');
+                 
+                 if (history && history.length > 0) {
+                     historyList.innerHTML = history.map(item => `
+                         <div class="history-item">
+                             <div class="history-query">"${item.query}"</div>
+                             <div class="history-location">${item.location}</div>
+                         </div>
+                     `).join('');
+                 } else {
+                     historyList.innerHTML = '<div class="history-empty">No recent queries yet</div>';
+                 }
+             } catch (error) {
+                 console.error('Failed to load history:', error);
+                 document.getElementById('historyList').innerHTML = '<div class="history-empty">Failed to load history</div>';
+             }
+         }
+         
+         // Load history when page loads
+         window.addEventListener('DOMContentLoaded', loadHistory);
+         
          async function sendQuery() {
              const input = document.getElementById('queryInput');
              const query = input.value.trim();
@@ -257,6 +357,9 @@ HTML_TEMPLATE = """
                 
                 // Clear input
                 input.value = '';
+                
+                // Reload history to show the new query
+                loadHistory();
                 
             } catch (error) {
                 const loadingDiv = chatBox.querySelector('.loading');
@@ -559,6 +662,74 @@ Output ONLY the limerick, no other text."""
         return None
 
 
+async def get_global_history(env):
+    """Retrieve global chat history from KV"""
+    try:
+        stored = await env.CHAT_HISTORY.get("global_chat_history")
+        if stored:
+            history = json.loads(stored)
+            print(f"[KV] Retrieved {len(history)} entries from global history")
+            return history
+        return []
+    except Exception as e:
+        print(f"[KV] Error getting history: {e}")
+        return []
+
+
+async def save_to_global_history(env, query, response_data):
+    """Save conversation to global KV, keeping last 4 entries"""
+    try:
+        # Debug: Check if binding exists
+        print(f"[KV DEBUG] env has CHAT_HISTORY: {hasattr(env, 'CHAT_HISTORY')}")
+        if hasattr(env, 'CHAT_HISTORY'):
+            print(f"[KV DEBUG] CHAT_HISTORY type: {type(env.CHAT_HISTORY)}")
+        
+        # Get existing global history
+        history = await get_global_history(env)
+        
+        # Create new entry
+        entry = {
+            "query": query,
+            "location": response_data.get("location", "Unknown"),
+            "timestamp": datetime.now().isoformat(),
+            "type": "forecast" if "forecast" in response_data else "current"
+        }
+        
+        # Add to history
+        history.append(entry)
+        
+        # Keep only last 4 entries globally
+        history = history[-4:]
+        
+        # Debug: Show what we're about to save
+        data_to_save = json.dumps(history)
+        print(f"[KV DEBUG] About to save {len(data_to_save)} bytes to key 'global_chat_history'")
+        print(f"[KV DEBUG] Data preview: {data_to_save[:100]}...")
+        
+        # Save back to KV (no expiration - persists indefinitely)
+        put_result = await env.CHAT_HISTORY.put(
+            "global_chat_history",
+            data_to_save
+        )
+        
+        print(f"[KV DEBUG] Put result: {put_result}")
+        print(f"[KV] Saved to global history. Total entries: {len(history)}")
+        
+        # Verify it was saved by reading it back immediately
+        verify = await env.CHAT_HISTORY.get("global_chat_history")
+        if verify:
+            print(f"[KV DEBUG] Verification: Successfully read back {len(verify)} bytes")
+        else:
+            print(f"[KV DEBUG] WARNING: Verification failed - could not read back the data!")
+        
+        return True
+    except Exception as e:
+        print(f"[KV] Error saving history: {e}")
+        import traceback
+        print(f"[KV DEBUG] Full traceback: {traceback.format_exc()}")
+        return False
+
+
 async def on_fetch(request, env):
     """Main fetch handler for Cloudflare Workers"""
     url = request.url
@@ -567,6 +738,19 @@ async def on_fetch(request, env):
     # Parse URL
     path = url.split('://')[1].split('/')[1:] if '://' in url else []
     path = '/' + '/'.join(path) if path else '/'
+    
+    # GET /api/history - return chat history as JSON
+    if method == "GET" and path == '/api/history':
+        headers = Headers.new()
+        headers.set("Content-Type", "application/json")
+        headers.set("Access-Control-Allow-Origin", "*")
+        
+        try:
+            history = await get_global_history(env)
+            return Response.new(json.dumps(history), status=200, headers=headers)
+        except Exception as e:
+            print(f"[API] Error fetching history: {e}")
+            return Response.new(json.dumps([]), status=200, headers=headers)
     
     # GET / or /chat - return HTML interface
     if method == "GET" and path in ['/', '/chat']:
@@ -704,6 +888,9 @@ async def on_fetch(request, env):
             except Exception as e:
                 print(f"[Main] Limerick generation error (non-critical): {str(e)}")
                 weather_data['limerick'] = None
+            
+            # Save to global conversation history (KV storage)
+            await save_to_global_history(env, user_query, weather_data)
             
             # Return successful response
             print(f"[Main] Returning successful response")

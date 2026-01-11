@@ -8,6 +8,11 @@ compatibility_flags = ["python_workers"]
 # CF_API_TOKEN = "your-cloudflare-api-token"
 # WEATHER_API_KEY = "your-openweathermap-api-key"
 
+# KV namespace for conversation history
+[[kv_namespaces]]
+binding = "CHAT_HISTORY"
+id = "c55237a233d6430d8f037f13e2ee34d0"
+
 
 [observability]
 [observability.logs]
