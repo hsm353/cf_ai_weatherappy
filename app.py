@@ -244,7 +244,7 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
         print(f"[Workers AI] Parsing query: {prompt}")
         
         headers = Headers.new()
-        headers.set("Authorization", f"Bearer {api_token[:8]}...{api_token[-4:]}")
+        headers.set("Authorization", f"Bearer {api_token}")
         headers.set("Content-Type", "application/json")
         
         response = await fetch(url, method="POST", headers=headers, body=json.dumps(payload))
