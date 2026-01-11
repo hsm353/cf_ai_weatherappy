@@ -264,7 +264,7 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
         result = await response.json()
         print("a5")
         # Log the response (JsProxy objects - access directly, don't serialize)
-        print(f"[Workers AI] Response success: {result.get('success')}")
+        print(f"[Workers AI] Response success: {result['success']}")
         print("a6")
         # Debug: List all keys in the result
         try:
@@ -279,13 +279,13 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
             print("a11")
         
 
-        if result.get('result'):
+        if result['result']:
             print("a12")
             print(f"[Workers AI] Response has result: True")
-        if result.get('errors'):
+        if result['errors']:
             print("a13")
-            print(f"[Workers AI] Errors: {result.get('errors')}")
-        if result.get("success") and result.get("result"):
+            print(f"[Workers AI] Errors: {result['errors']}")
+        if result["success"] and result["result"]:
             print("a14")
             ai_response = result["result"]["response"]
             print("a15")
@@ -294,7 +294,11 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
             return ai_response
         else:
             print("a17")
-            error_msg = result.get("errors", ["Unknown AI error"])[0] if result.get("errors") else "AI returned no result"
+            # Handle errors - check if errors array exists and has items
+            if result['errors'] and len(result['errors']) > 0:
+                error_msg = result['errors'][0]
+            else:
+                error_msg = "AI returned no result"
             print("a18")
             print(f"[Workers AI] Error: {error_msg}")
             print("a19")
