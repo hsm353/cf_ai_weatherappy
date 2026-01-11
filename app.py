@@ -257,7 +257,7 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
             raise Exception(f"Workers AI API error (HTTP {response.status}): {error_text[:100]}")
         
         result = await response.json()
-        
+        print(result)
         if result.get("success") and result.get("result"):
             ai_response = result["result"]["response"]
             print(f"[Workers AI] Successfully parsed query")
