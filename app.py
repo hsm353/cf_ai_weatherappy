@@ -13,7 +13,7 @@ HTML_TEMPLATE = """
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #152238 0%, #192a3e 50%, #1d3249 100%);
+            background: #F38020;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -227,8 +227,8 @@ HTML_TEMPLATE = """
                          data.forecast.forEach(day => {
                              html += '<div style="background: #f9fafb; padding: 14px; margin: 10px 0; border-radius: 10px; border-left: 4px solid #f6821f; border: 1px solid #e5e7eb;">';
                              html += `<div style="font-weight: 600; color: #1f2937; margin-bottom: 6px; font-size: 1.05em;">${formatDate(day.date)}</div>`;
-                             html += `<div style="color: #5a6c7d; margin-bottom: 4px;">☁️ ${day.condition}</div>`;
-                             html += `<div style="color: #5a6c7d;">🌡️ High: <strong style="color: #f6821f;">${day.high}</strong> | Low: <strong style="color: #3b82f6;">${day.low}</strong></div>`;
+                             html += `<div style="color: #5a6c7d; margin-bottom: 4px;">${day.condition.replace(/[🌡️☀️🌧️❄️🌨⛅🌤🌦🌩⛈🌫]/g, '').trim()}</div>`;
+                             html += `<div style="color: #5a6c7d;">High: <strong style="color: #f6821f;">${day.high}</strong> | Low: <strong style="color: #3b82f6;">${day.low}</strong></div>`;
                              html += '</div>';
                          });
                          
@@ -236,10 +236,13 @@ HTML_TEMPLATE = """
                      } else {
                          // Current weather data
                          html += '<div class="weather-info">';
-                         if (data.temperature) html += `<div class="weather-item"><strong>🌡️ Temp</strong><br>${data.temperature}</div>`;
-                         if (data.condition) html += `<div class="weather-item"><strong>☁️ Condition</strong><br>${data.condition}</div>`;
-                         if (data.humidity !== undefined) html += `<div class="weather-item"><strong>💧 Humidity</strong><br>${data.humidity}%</div>`;
-                         if (data.wind) html += `<div class="weather-item"><strong>💨 Wind</strong><br>${data.wind}</div>`;
+                         if (data.temperature) html += `<div class="weather-item"><strong>Temp</strong><br>${data.temperature}</div>`;
+                         if (data.condition) {
+                             const cleanCondition = data.condition.replace(/[🌡️☀️🌧️❄️🌨⛅🌤🌦🌩⛈🌫]/g, '').trim();
+                             html += `<div class="weather-item"><strong>Condition</strong><br>${cleanCondition}</div>`;
+                         }
+                          if (data.humidity !== undefined) html += `<div class="weather-item"><strong>💧 Humidity</strong><br>${data.humidity}%</div>`;
+                          if (data.wind) html += `<div class="weather-item"><strong>💨 Wind</strong><br>${data.wind}</div>`;
                          html += '</div>';
                      }
                      

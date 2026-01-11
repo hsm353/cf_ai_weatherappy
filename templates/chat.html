@@ -13,7 +13,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #F38020;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -269,11 +269,12 @@
             }
             
             if (data.temperature !== undefined) {
-                html += `<div class="weather-detail"><strong>🌡️ Temperature:</strong> ${data.temperature}</div>`;
+                html += `<div class="weather-detail"><strong>Temperature:</strong> ${data.temperature}</div>`;
             }
             
             if (data.condition) {
-                html += `<div class="weather-detail"><strong>☁️ Condition:</strong> ${data.condition}</div>`;
+                const cleanCondition = data.condition.replace(/[🌡️☀️🌧️❄️🌨⛅🌤🌦🌩⛈🌫]/g, '').trim();
+                html += `<div class="weather-detail"><strong>Condition:</strong> ${cleanCondition}</div>`;
             }
             
             if (data.humidity !== undefined) {
@@ -286,11 +287,11 @@
             
             if (data.forecast && data.forecast.length > 0) {
                 html += '<h3 style="margin-top: 20px; color: #4caf50;">Forecast:</h3>';
-                data.forecast.forEach(day => {
-                    html += `<div class="weather-detail">`;
-                    html += `<strong>${day.date}:</strong> ${day.condition} - High: ${day.high}, Low: ${day.low}`;
-                    html += `</div>`;
-                });
+                         data.forecast.forEach(day => {
+                             html += `<div class="weather-detail">`;
+                             html += `<strong>${day.date}:</strong> ${day.condition.replace(/[🌡️☀️🌧️❄️🌨⛅🌤🌦🌩⛈🌫]/g, '').trim()} - High: ${day.high}, Low: ${day.low}`;
+                             html += `</div>`;
+                         });
             }
             
             html += '</div>';
