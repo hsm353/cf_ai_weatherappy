@@ -246,7 +246,7 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
         headers = Headers.new()
         headers.set("Authorization", f"Bearer {api_token}")
         headers.set("Content-Type", "application/json")
-        
+        print(payload)
         response = await fetch(url, method="POST", headers=headers, body=json.dumps(payload))
         
         print(f"[Workers AI] Response status: {response.status}")
