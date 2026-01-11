@@ -1,13 +1,48 @@
 {
-	"result": {
-		"response": "{\"intent\": \"get_weather\", \"q\": \"Paris\", \"units\": \"metric\", \"timeframe\": \"now\"}",
-		"usage": {
-			"prompt_tokens": 164,
-			"completion_tokens": 27,
-			"total_tokens": 191
-		}
-	},
-	"success": true,
-	"errors": [],
-	"messages": []
+    "location": "Nicosia, Cyprus",
+    "forecast": [
+        {
+            "date": "2026-01-11",
+            "condition": "Patchy rain nearby",
+            "high": "17.8\u00b0C",
+            "low": "11.1\u00b0C"
+        },
+        {
+            "date": "2026-01-12",
+            "condition": "Moderate rain",
+            "high": "13.2\u00b0C",
+            "low": "9.9\u00b0C"
+        },
+        {
+            "date": "2026-01-13",
+            "condition": "Patchy rain nearby",
+            "high": "12.6\u00b0C",
+            "low": "7.7\u00b0C"
+        },
+        {
+            "date": "2026-01-14",
+            "condition": "Sunny",
+            "high": "13.1\u00b0C",
+            "low": "6.3\u00b0C"
+        },
+        {
+            "date": "2026-01-15",
+            "condition": "Sunny",
+            "high": "14.6\u00b0C",
+            "low": "6.8\u00b0C"
+        },
+        {
+            "date": "2026-01-16",
+            "condition": "Sunny",
+            "high": "14.6\u00b0C",
+            "low": "8.3\u00b0C"
+        },
+        {
+            "date": "2026-01-17",
+            "condition": "Overcast ",
+            "high": "14.1\u00b0C",
+            "low": "9.1\u00b0C"
+        }
+    ],
+    "limerick": "In Nicosia, Cyprus so fair,\nThe weather's a mystery to share,\nWhat's the temp, oh so bright?\nAnd what's the forecast in sight?\nOnly the gods know, with no care!"
 }

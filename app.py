@@ -12,8 +12,8 @@ HTML_TEMPLATE = """
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #152238 0%, #192a3e 50%, #1d3249 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -21,60 +21,68 @@ HTML_TEMPLATE = """
             padding: 20px;
         }
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 600px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-width: 700px;
             width: 100%;
-            padding: 30px;
+            padding: 35px;
         }
         h1 {
-            color: #667eea;
+            color: #f6821f;
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 2em;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            font-weight: 600;
         }
         .subtitle {
             text-align: center;
-            color: #666;
+            color: #5a6c7d;
             margin-bottom: 30px;
+            font-size: 1em;
         }
         .chat-box {
-            background: #f7f7f7;
-            border-radius: 15px;
+            background: #f9fafb;
+            border-radius: 12px;
             padding: 20px;
             min-height: 200px;
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
             margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
         }
         .message {
             background: white;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 12px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
         }
         .weather-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
+            gap: 12px;
+            margin-top: 15px;
         }
         .weather-item {
-            background: #f0f0f0;
-            padding: 10px;
-            border-radius: 8px;
+            background: #f9fafb;
+            padding: 14px;
+            border-radius: 10px;
             text-align: center;
+            border: 1px solid #e5e7eb;
         }
         .limerick {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin-top: 15px;
+            background: #fff5e6;
+            border-left: 4px solid #f6821f;
+            padding: 18px;
+            margin-top: 20px;
             border-radius: 8px;
             font-style: italic;
             white-space: pre-line;
+            color: #1f2937;
+            line-height: 1.6;
+            font-family: Georgia, 'Times New Roman', serif;
         }
         .input-group {
             display: flex;
@@ -82,44 +90,72 @@ HTML_TEMPLATE = """
         }
         input {
             flex: 1;
-            padding: 15px;
-            border: 2px solid #ddd;
+            padding: 15px 20px;
+            border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+            background: #f9fafb;
         }
         input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #f6821f;
+            background: white;
+        }
+        /* Style the datalist dropdown */
+        datalist {
+            position: absolute;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         button {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 35px;
+            background: linear-gradient(135deg, #f6821f 0%, #ff9a3c 100%);
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(246, 130, 31, 0.3);
         }
         button:hover {
-            transform: scale(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(246, 130, 31, 0.4);
         }
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
         .error {
-            background: #ffe6e6;
-            border-left: 4px solid #ff4444;
+            background: #fef2f2;
+            border-left: 4px solid #dc2626;
             padding: 15px;
             border-radius: 8px;
-            color: #cc0000;
+            color: #991b1b;
         }
         .loading {
             text-align: center;
             padding: 20px;
-            color: #667eea;
+            color: #f6821f;
+            font-weight: 500;
+        }
+        h3 {
+            color: #1f2937;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+        }
+        h4 {
+            color: #f6821f;
+            font-size: 1.1em;
+            margin-top: 15px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -131,27 +167,35 @@ HTML_TEMPLATE = """
         <div class="chat-box" id="chatBox"></div>
         
         <div class="input-group">
-            <input type="text" id="queryInput" placeholder="What's the weather in Paris?" />
+            <input type="text" id="queryInput" list="samplePrompts" placeholder="Type your weather question or select a sample..." autocomplete="off" />
+            <datalist id="samplePrompts">
+                <option value="What's the weather in Borat's home town">
+                <option value="What's it like in the city that Scarlett Johansson was born in">
+                <option value="Weather in the oil capital of the UK for the next 7 days?">
+            </datalist>
             <button onclick="sendQuery()" id="sendBtn">Send</button>
         </div>
     </div>
 
     <script>
-        async function sendQuery() {
-            const input = document.getElementById('queryInput');
-            const query = input.value.trim();
-            if (!query) return;
-
-            const chatBox = document.getElementById('chatBox');
-            const sendBtn = document.getElementById('sendBtn');
-            
-            // Disable input
-            sendBtn.disabled = true;
-            input.disabled = true;
-            
-            // Show loading
-            chatBox.innerHTML += '<div class="loading">🔄 Fetching weather...</div>';
-            chatBox.scrollTop = chatBox.scrollHeight;
+         async function sendQuery() {
+             const input = document.getElementById('queryInput');
+             const query = input.value.trim();
+             if (!query) return;
+ 
+             const chatBox = document.getElementById('chatBox');
+             const sendBtn = document.getElementById('sendBtn');
+             
+             // Clear previous results
+             chatBox.innerHTML = '';
+             
+             // Disable input
+             sendBtn.disabled = true;
+             input.disabled = true;
+             
+             // Show loading
+             chatBox.innerHTML = '<div class="loading">🔄 Fetching weather...</div>';
+             chatBox.scrollTop = chatBox.scrollHeight;
             
             try {
                 const response = await fetch('/chat', {
@@ -169,21 +213,40 @@ HTML_TEMPLATE = """
                 // Display result
                 let html = '<div class="message">';
                 
-                if (data.error) {
-                    html += `<div class="error">${data.error}</div>`;
-                } else {
-                    html += `<h3>📍 ${data.location}</h3>`;
-                    html += '<div class="weather-info">';
-                    html += `<div class="weather-item"><strong>🌡️ Temp</strong><br>${data.temperature}</div>`;
-                    html += `<div class="weather-item"><strong>☁️ Condition</strong><br>${data.condition}</div>`;
-                    html += `<div class="weather-item"><strong>💧 Humidity</strong><br>${data.humidity}%</div>`;
-                    html += `<div class="weather-item"><strong>💨 Wind</strong><br>${data.wind}</div>`;
-                    html += '</div>';
-                    
-                    if (data.limerick) {
-                        html += `<div class="limerick">📝 ${data.limerick}</div>`;
-                    }
-                }
+                 if (data.error) {
+                     html += `<div class="error">${data.error}</div>`;
+                 } else {
+                     html += `<h3>📍 ${data.location}</h3>`;
+                     
+                     // Check if this is current weather or forecast
+                     if (data.forecast && data.forecast.length > 0) {
+                         // Forecast data
+                         html += '<h4 style="margin-top: 15px; color: #667eea;">📅 Weather Forecast</h4>';
+                         html += '<div style="margin-top: 10px;">';
+                         
+                         data.forecast.forEach(day => {
+                             html += '<div style="background: #f9fafb; padding: 14px; margin: 10px 0; border-radius: 10px; border-left: 4px solid #f6821f; border: 1px solid #e5e7eb;">';
+                             html += `<div style="font-weight: 600; color: #1f2937; margin-bottom: 6px; font-size: 1.05em;">${formatDate(day.date)}</div>`;
+                             html += `<div style="color: #5a6c7d; margin-bottom: 4px;">☁️ ${day.condition}</div>`;
+                             html += `<div style="color: #5a6c7d;">🌡️ High: <strong style="color: #f6821f;">${day.high}</strong> | Low: <strong style="color: #3b82f6;">${day.low}</strong></div>`;
+                             html += '</div>';
+                         });
+                         
+                         html += '</div>';
+                     } else {
+                         // Current weather data
+                         html += '<div class="weather-info">';
+                         if (data.temperature) html += `<div class="weather-item"><strong>🌡️ Temp</strong><br>${data.temperature}</div>`;
+                         if (data.condition) html += `<div class="weather-item"><strong>☁️ Condition</strong><br>${data.condition}</div>`;
+                         if (data.humidity !== undefined) html += `<div class="weather-item"><strong>💧 Humidity</strong><br>${data.humidity}%</div>`;
+                         if (data.wind) html += `<div class="weather-item"><strong>💨 Wind</strong><br>${data.wind}</div>`;
+                         html += '</div>';
+                     }
+                     
+                     if (data.limerick) {
+                         html += `<div class="limerick">${data.limerick}</div>`;
+                     }
+                 }
                 
                 html += '</div>';
                 chatBox.innerHTML += html;
@@ -203,13 +266,26 @@ HTML_TEMPLATE = """
             }
         }
         
-        // Allow Enter key to send
-        document.getElementById('queryInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendQuery();
-        });
-        
-        // Focus input on load
-        document.getElementById('queryInput').focus();
+         // Helper function to format date nicely
+         function formatDate(dateStr) {
+             const date = new Date(dateStr);
+             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+             
+             const dayName = days[date.getDay()];
+             const monthName = months[date.getMonth()];
+             const dayNum = date.getDate();
+             
+             return `${dayName}, ${monthName} ${dayNum}`;
+         }
+         
+         // Allow Enter key to send
+         document.getElementById('queryInput').addEventListener('keypress', function(e) {
+             if (e.key === 'Enter') sendQuery();
+         });
+         
+         // Focus input on load
+         document.getElementById('queryInput').focus();
     </script>
 </body>
 </html>
@@ -261,47 +337,40 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
             print("a3")
             raise Exception(f"Workers AI API error (HTTP {response.status}): {error_text[:100]}")
         print("a4")
-        result = await response.json()
+        result_js = await response.json()
         print("a5")
-        # Log the response (JsProxy objects - access directly, don't serialize)
-        print(f"[Workers AI] Response success: {result['success']}")
+        # Convert JsProxy to Python dict for easier access
+        result = result_js.to_py()
         print("a6")
-        # Debug: List all keys in the result
-        try:
-            print("a7")
-            keys = Object.keys(result)
-            print("a8")
-            print(f"[Workers AI] Response keys: {', '.join([str(k) for k in keys])}")
-            print("a9")
-        except Exception as e:
-            print("a10")
-            print(f"[Workers AI] Could not list keys: {e}")
-            print("a11")
-        
+        print(f"[Workers AI] Response success: {result.get('success')}")
+        print("a7")
+        print(f"[Workers AI] Response keys: {list(result.keys())}")
+        print("a8")
 
-        if result['result']:
-            print("a12")
+        if result.get('result'):
+            print("a9")
             print(f"[Workers AI] Response has result: True")
-        if result['errors']:
-            print("a13")
-            print(f"[Workers AI] Errors: {result['errors']}")
-        if result["success"] and result["result"]:
-            print("a14")
+        if result.get('errors'):
+            print("a10")
+            print(f"[Workers AI] Errors: {result.get('errors')}")
+        if result.get("success") and result.get("result"):
+            print("a11")
             ai_response = result["result"]["response"]
-            print("a15")
+            print("a12")
             print(f"[Workers AI] Successfully parsed query")
-            print("a16")
+            print("a13")
             return ai_response
         else:
-            print("a17")
+            print("a14")
             # Handle errors - check if errors array exists and has items
-            if result['errors'] and len(result['errors']) > 0:
-                error_msg = result['errors'][0]
+            errors = result.get('errors', [])
+            if errors and len(errors) > 0:
+                error_msg = errors[0]
             else:
                 error_msg = "AI returned no result"
-            print("a18")
+            print("a15")
             print(f"[Workers AI] Error: {error_msg}")
-            print("a19")
+            print("a16")
             raise Exception(f"Workers AI failed: {error_msg}")
             
     except Exception as e:
@@ -351,7 +420,9 @@ async def get_weather(query_params, api_key):
             print(f"[WeatherAPI Response] Error: HTTP {response.status} - {error_text[:100]}")
             raise Exception(f"Weather API error (HTTP {response.status}): Unable to fetch weather data")
         
-        data = await response.json()
+        data_js = await response.json()
+        # Convert JsProxy to Python dict for easier access
+        data = data_js.to_py()
         
         # Log the response data (truncated for readability)
         print(f"[WeatherAPI Response] Data received for: {data.get('location', {}).get('name', 'Unknown')}")
@@ -441,7 +512,7 @@ async def generate_limerick(location, weather_condition, temperature, account_id
         
         url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
         
-        prompt = f"""Write a fun, creative limerick (5-line poem with AABBA rhyme scheme) about {location} and its current weather.
+        prompt = f"""Write a fun, creative limerick (5-line poem with AABBA rhyme scheme) about {location} and its current weather. Make sure to include something about the regional cuisine and it's history.
 
 Weather details:
 - Location: {location}
@@ -467,7 +538,9 @@ Output ONLY the limerick, no other text."""
             print(f"[Limerick] Warning: Failed to generate limerick (HTTP {response.status})")
             return None
         
-        result = await response.json()
+        result_js = await response.json()
+        # Convert JsProxy to Python dict for easier access
+        result = result_js.to_py()
         
         if result.get("success") and result.get("result"):
             limerick = result["result"]["response"].strip().strip('"').strip("'")
