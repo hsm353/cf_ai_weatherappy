@@ -259,13 +259,21 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
             raise Exception(f"Workers AI API error (HTTP {response.status}): {error_text[:100]}")
         
         result = await response.json()
-        # Convert JsProxy to Python dict (if needed)
-
-        python_dict = Object.fromEntries(result)
-        print(json.dumps(python_dict, indent=2))  # ✅ Now it works
-        # Log the response (JsProxy objects can't use json.dumps, just print directly)
+        
+        # Log the response (JsProxy objects - access directly, don't serialize)
         print(f"[Workers AI] Response success: {result.get('success')}")
-        print(f"[Workers AI] Response result: {result.get('result')}")
+        
+        # Debug: List all keys in the result
+        try:
+            keys = Object.keys(result)
+            print(f"[Workers AI] Response keys: {', '.join([str(k) for k in keys])}")
+        except Exception as e:
+            print(f"[Workers AI] Could not list keys: {e}")
+        
+        if result.get('result'):
+            print(f"[Workers AI] Response has result: True")
+        if result.get('errors'):
+            print(f"[Workers AI] Errors: {result.get('errors')}")
         if result.get("success") and result.get("result"):
             ai_response = result["result"]["response"]
             print(f"[Workers AI] Successfully parsed query")
