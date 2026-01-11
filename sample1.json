@@ -1,0 +1,13 @@
+{
+	"result": {
+		"response": "{\"intent\": \"get_weather\", \"q\": \"Paris\", \"units\": \"metric\", \"timeframe\": \"now\"}",
+		"usage": {
+			"prompt_tokens": 164,
+			"completion_tokens": 27,
+			"total_tokens": 191
+		}
+	},
+	"success": true,
+	"errors": [],
+	"messages": []
+}

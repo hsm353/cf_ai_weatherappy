@@ -254,37 +254,56 @@ Output: {"intent": "get_weather", "q": "Paris", "units": "metric", "timeframe": 
         print(f"[Workers AI] Response status: {response.status}")
         
         if not response.ok:
+            print("a1")
             error_text = await response.text()
+            print("a2")
             print(f"[Workers AI] Error response: {error_text}")
+            print("a3")
             raise Exception(f"Workers AI API error (HTTP {response.status}): {error_text[:100]}")
-        
+        print("a4")
         result = await response.json()
-        
+        print("a5")
         # Log the response (JsProxy objects - access directly, don't serialize)
         print(f"[Workers AI] Response success: {result.get('success')}")
-        
+        print("a6")
         # Debug: List all keys in the result
         try:
+            print("a7")
             keys = Object.keys(result)
+            print("a8")
             print(f"[Workers AI] Response keys: {', '.join([str(k) for k in keys])}")
+            print("a9")
         except Exception as e:
+            print("a10")
             print(f"[Workers AI] Could not list keys: {e}")
+            print("a11")
         
+
         if result.get('result'):
+            print("a12")
             print(f"[Workers AI] Response has result: True")
         if result.get('errors'):
+            print("a13")
             print(f"[Workers AI] Errors: {result.get('errors')}")
         if result.get("success") and result.get("result"):
+            print("a14")
             ai_response = result["result"]["response"]
+            print("a15")
             print(f"[Workers AI] Successfully parsed query")
+            print("a16")
             return ai_response
         else:
+            print("a17")
             error_msg = result.get("errors", ["Unknown AI error"])[0] if result.get("errors") else "AI returned no result"
+            print("a18")
             print(f"[Workers AI] Error: {error_msg}")
+            print("a19")
             raise Exception(f"Workers AI failed: {error_msg}")
             
     except Exception as e:
+        print("a20")
         print(f"[Workers AI] Exception: {str(e)}")
+        print("a21")
         raise Exception(f"AI query parsing failed: {str(e)}")
 
 
