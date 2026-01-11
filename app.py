@@ -1,7 +1,9 @@
 import os
 import json
-import requests
 from flask import Flask, request, render_template, jsonify
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode
+from urllib.error import HTTPError, URLError
 
 app = Flask(__name__)
 
@@ -11,11 +13,6 @@ def call_workers_ai(prompt, account_id, api_token):
     Call Cloudflare Workers AI to convert natural language to JSON structure
     """
     url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
-    
-    headers = {
-        "Authorization": f"Bearer {api_token}",
-        "Content-Type": "application/json"
-    }
     
     system_prompt = """You are a weather query parser. Convert natural language weather queries into JSON.
 Output format: {"intent": "get_weather", "q": "location", "units": "metric"|"imperial", "timeframe": "now"|"today"|"tomorrow"|"7d"}
@@ -47,9 +44,13 @@ Output: {"intent": "get_weather", "q": "London", "units": "metric", "timeframe":
     }
     
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-        result = response.json()
+        req = Request(url)
+        req.add_header("Authorization", f"Bearer {api_token}")
+        req.add_header("Content-Type", "application/json")
+        
+        data = json.dumps(payload).encode('utf-8')
+        with urlopen(req, data=data, timeout=10) as response:
+            result = json.loads(response.read().decode('utf-8'))
         
         # Extract the AI response
         if result.get("success") and result.get("result"):
@@ -80,24 +81,16 @@ def get_weather(query_params, api_key):
     try:
         if timeframe in ["now", "today"]:
             # Current weather
-            url = f"{base_url}weather"
-            params = {
-                "q": location,
-                "units": units,
-                "appid": api_key
-            }
+            endpoint = "weather"
         else:
             # Forecast weather
-            url = f"{base_url}forecast"
-            params = {
-                "q": location,
-                "units": units,
-                "appid": api_key
-            }
+            endpoint = "forecast"
         
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
+        params = urlencode({"q": location, "units": units, "appid": api_key})
+        url = f"{base_url}{endpoint}?{params}"
+        
+        with urlopen(url, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
         
         # Format the response
         if timeframe in ["now", "today"]:
@@ -131,11 +124,11 @@ def get_weather(query_params, api_key):
                 "forecast": forecast_list[:7] if timeframe == "7d" else forecast_list[:2]
             }
             
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
+    except HTTPError as e:
+        if e.code == 404:
             return {"error": f"Location '{location}' not found"}
         else:
-            return {"error": f"Weather API error: {e}"}
+            return {"error": f"Weather API error: HTTP {e.code}"}
     except Exception as e:
         return {"error": f"Failed to fetch weather: {str(e)}"}
 
@@ -145,11 +138,6 @@ def generate_limerick(location, weather_condition, temperature, account_id, api_
     Generate a limerick about the city and its weather using Cloudflare Workers AI
     """
     url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3-8b-instruct"
-    
-    headers = {
-        "Authorization": f"Bearer {api_token}",
-        "Content-Type": "application/json"
-    }
     
     prompt = f"""Write a fun, creative limerick (5-line poem with AABBA rhyme scheme) about {location} and its current weather.
 
@@ -168,9 +156,13 @@ The limerick should be playful and weather-themed. Output ONLY the limerick, no 
     }
     
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-        result = response.json()
+        req = Request(url)
+        req.add_header("Authorization", f"Bearer {api_token}")
+        req.add_header("Content-Type", "application/json")
+        
+        data = json.dumps(payload).encode('utf-8')
+        with urlopen(req, data=data, timeout=10) as response:
+            result = json.loads(response.read().decode('utf-8'))
         
         if result.get("success") and result.get("result"):
             limerick = result["result"]["response"].strip()
