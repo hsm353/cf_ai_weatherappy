@@ -176,22 +176,19 @@ HTML_TEMPLATE = """
             font-weight: 700;
             color: #1f2937;
             margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         .history-item {
-            padding: 12px;
-            background: #f9fafb;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            padding: 12px 0;
+            margin-bottom: 0;
             font-size: 0.9em;
-            border-left: 3px solid #f6821f;
+            border-bottom: 1px solid #e5e7eb;
             transition: all 0.2s;
         }
         .history-item:hover {
-            background: #f3f4f6;
-            transform: translateX(-3px);
+            background: #f9fafb;
+        }
+        .history-item:last-child {
+            border-bottom: none;
         }
         .history-query {
             color: #5a6c7d;
@@ -244,7 +241,7 @@ HTML_TEMPLATE = """
     </div>
     
     <div class="history-sidebar">
-        <div class="history-title">📝 Recent Queries</div>
+        <div class="history-title">Recent Queries</div>
         <div id="historyList">
             <div class="history-empty">Loading...</div>
         </div>
